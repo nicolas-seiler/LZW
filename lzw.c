@@ -26,20 +26,20 @@ void lzw_code(const char* src_path, const char* dest_path) {
 
   // Encodage
   while ((c = fgetc(src_file)) != EOF) {
-    array_add(p, c);
+    p = array_add(p, c);
     if (dictionary_is_in(dic, p)) {
-      array_add(w, c);
+      w = array_add(w, c);
     }
     else {
-      dictionary_add(dic, p);
-      array_add(encoded_file, dictionary_get_code(dic, w));
-      array_clear(w);
-      array_clear(p);
+      dic = dictionary_add(dic, p);
+      encoded_file = array_add(encoded_file, dictionary_get_code(dic, w));
+      w = array_clear(w);
+      p = array_clear(p);
     }
   }
 
   // Copie de l'encodage vers le fichier destination
-  array_ints_to_bytes(encoded_file);
+  encoded_file = array_ints_to_bytes(encoded_file);
   _write_array(dest_path, encoded_file);
 
   // Fermeture du fichier source
@@ -53,4 +53,17 @@ void lzw_code(const char* src_path, const char* dest_path) {
 }
 
 void lzw_decode(const char* src_path, const char* dest_path) {
+  // Ouverture du fichier source
+  FILE* src_file = fopen(src_path, "r");
+
+  // Initialisation des varaibles temporaires
+  array_t* encoded_file = array_new(),
+         * w = array_new(),
+         * p = array_new();
+  dictionary_t* dic = dictionary_new();
+  int c;
+
+  // Encodage
+  while ((c = fgetc(src_file)) != EOF) {
+  }
 }

@@ -9,15 +9,16 @@ dictionary_t* dictionary_new() {
   int i;
   for (i = 0 ; i < 256 ; ++i) {
     array_t* a = array_new();
-    array_add(a, i);
-    dictionary_add(dic, a);
+    a = array_add(a, i);
+    dic = dictionary_add(dic, a);
   }
   return dic;
 }
 
-void dictionary_add(dictionary_t* dic, const array_t* e) {
+dictionary_t* dictionary_add(dictionary_t* dic, const array_t* e) {
   dic->content[dic->len] = array_new_from(e);
   ++(dic->len);
+  return dic;
 }
 
 bool dictionary_is_in(const dictionary_t* dic, const array_t* e) {
