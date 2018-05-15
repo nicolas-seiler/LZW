@@ -1,32 +1,18 @@
 #ifndef _DICTIONARY_H_
 #define _DICTIONARY_H_
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdio.h>
-
-typedef char octet_t;
+#include "array.h"
 
 typedef struct {
-  octet_t seq[BUFSIZ];
-  size_t size;
-} word_t;
+  array_t* content[4096];
+  size_t len;
+} dictionary_t;
 
-#define WORD_ADD(w, o) \
-  do { \
-    w.seq[w.size] = o; \
-    w.size++; \
-    w.seq[w.size] = '\0'; \
-  } while (0)
-
-#define WORD_RESET(w) \
-  do { \
-    w.seq[0] = '\0'; \
-    w.size = 0; \
-  } while (0)
-
-  bool dic_is_entry_existent(const word_t* w);
-  int dic_get_entry_code(const word_t* w);
-  int dic_add_entry(const word_t* w);
+dictionary_t* dictionary_new();
+void dictionary_add(dictionary_t* dic, const array_t* e);
+bool dictionary_is_in(const dictionary_t* dic, const array_t* e);
+int dictionary_get_code(const dictionary_t* dic, const array_t* e);
+const array_t* dictionary_get_entry(const dictionary_t* dic, int code);
+void dictionary_free(dictionary_t* dic);
 
 #endif

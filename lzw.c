@@ -1,64 +1,56 @@
+#include "lzw.h"
+
 #include <stdio.h>
-#include <stdlib.h>
-
+#include "array.h"
 #include "dictionary.h"
-#include "converter.h"
-#include "buffer.h"
 
-void lzw_encode(const char* src_path, const char* dest_path) {
-// -- Initialisation -----------------------------------------------------------
-  // Ouverture des fichiers
-  FILE* src_file = fopen(src_path, "r"),
-      * dest_file = fopen(dest_path, "w+");
-  // Tampons
-  word_t w; WORD_RESET(w);
-  int int_buf[2]; INT_BUF_RESET(int_buf);
-  octet_t byte_buf[3], c;
-
-// -- Exécution ----------------------------------------------------------------
-  while ((c = fgetc(src_file)) != EOF) {
-    WORD_ADD(w, c);
-    if (!dic_is_entry_existent(&w)) {
-      dic_add_entry(&w);
-      INT_BUF_ADD(int_buf, dic_get_entry_code(&w));
-      WORD_RESET(w);
-      WORD_ADD(w, c);
-      /* Si on a 24 bits dans le tampon qui contient des entiers, on convertit
-      ** ces entiers en byte et on écrit le tout dans le fichier de destination
-      */
-      if (INT_BUF_IS_FULL(int_buf)) {
-        CONV_INTS_TO_BYTES(int_buf, byte_buf);
-        INT_BUF_RESET(int_buf);
-        fwrite(byte_buf, 1, 3, dest_file);
-      }
-    }
+static void _write_array(const char* dest_path, const array_t* a) {
+  FILE* dest_file = fopen(dest_path, "w+");
+  size_t i;
+  for (i = 0 ; i < a->len ; ++i) {
+    fwrite((a->content)+i, sizeof(char), 1, dest_file);
   }
-  // S'il reste un dernier entier dans le tampon, il faut également l'écrire
-  if (!INT_BUF_IS_EMPTY(int_buf)) {
-    INT_BUF_ADD(int_buf, 10);
-    CONV_INTS_TO_BYTES(int_buf, byte_buf);
-    fwrite(byte_buf, 1, 3, dest_file);
-  }
-
-// -- Fermeture des fichiers et sortie -----------------------------------------
-  fclose(src_file);
   fclose(dest_file);
 }
 
-void lzw_decode(const char* src_path, const char* dest_path) {
-// -- Initialisation -----------------------------------------------------------
-  // Ouverture des fichiers
-  FILE* src_file = fopen(src_path, "r"),
-      * dest_file = fopen(dest_path, "w+");
-  // Tampons
-  word_t w; WORD_RESET(w);
-  int int_buf[2];
-  octet_t byte_buf[3], c;
+void lzw_code(const char* src_path, const char* dest_path) {
+  // Ouverture du fichier source
+  FILE* src_file = fopen(src_path, "r");
 
-// -- Exécution ----------------------------------------------------------------
-  while ((byte_buf[0] = fgetc(src_file)) != EOF) {
-    int_buf[1] = fgetc(src_file);
-    int_buf[2] = fgetc(src_file);
-    CONV_BYTES_TO_INTS(byte_buf, int_buf);
+  // Initialisation des varaibles temporaires
+  array_t* encoded_file = array_new(),
+         * w = array_new(),
+         * p = array_new();
+  dictionary_t* dic = dictionary_new();
+  int c;
+
+  // Encodage
+  while ((c = fgetc(src_file)) != EOF) {
+    array_add(p, c);
+    if (dictionary_is_in(dic, p)) {
+      array_add(w, c);
+    }
+    else {
+      dictionary_add(dic, p);
+      array_add(encoded_file, dictionary_get_code(dic, w));
+      array_clear(w);
+      array_clear(p);
+    }
   }
+
+  // Copie de l'encodage vers le fichier destination
+  array_ints_to_bytes(encoded_file);
+  _write_array(dest_path, encoded_file);
+
+  // Fermeture du fichier source
+  fclose(src_file);
+
+  // Libération des variables temporaires
+  array_free(encoded_file);
+  array_free(w);
+  array_free(p);
+  dictionary_free(dic);
+}
+
+void lzw_decode(const char* src_path, const char* dest_path) {
 }

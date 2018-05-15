@@ -1,8 +1,8 @@
 .PHONY: clean, mrproper, all, cmp
 
-PRG= code
-SRC= $(wildcard *.c)
-OBJ= $(SRC:.c=.o)
+PRG=lzw
+SRC=$(wildcard *.c)
+OBJ=$(SRC:.c=.o)
 LDFLAGS=
 
 all: $(PRG)

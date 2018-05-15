@@ -1,31 +1,47 @@
 #include "dictionary.h"
 
-#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-static char* dico[3840];
-static size_t nb_of_entry = 0;
-
-bool dic_is_entry_existent(const word_t* w) {
-  return dic_get_entry_code(w) != -1;
+dictionary_t* dictionary_new() {
+  dictionary_t* dic = (dictionary_t*)malloc(sizeof(dictionary_t));
+  dic->len = 0;
+  int i;
+  for (i = 0 ; i < 256 ; ++i) {
+    array_t* a = array_new();
+    array_add(a, i);
+    dictionary_add(dic, a);
+  }
+  return dic;
 }
 
-int dic_get_entry_code(const word_t* w) {
-  if (w->size == 1) {
-    return w->seq[0];
-  }
-  size_t i = 0;
-  while (i < nb_of_entry) {
-    if (!strncmp(dico[i], w->seq, w->size-1)) {
-      return 255+i;
+void dictionary_add(dictionary_t* dic, const array_t* e) {
+  dic->content[dic->len] = array_new_from(e);
+  ++(dic->len);
+}
+
+bool dictionary_is_in(const dictionary_t* dic, const array_t* e) {
+  return dictionary_get_code(dic, e) != -1;
+}
+
+int dictionary_get_code(const dictionary_t* dic, const array_t* e) {
+  size_t i;
+  for (i = 0 ; i < dic->len ; ++i) {
+    if (array_is_equal(dic->content[i], e)) {
+      return i;
     }
   }
   return -1;
 }
 
-int dic_add_entry(const word_t* w) {
-  dico[nb_of_entry] = (char*)malloc((w->size)*sizeof(char));
-  strcpy(dico[nb_of_entry], w->seq);
-  nb_of_entry++;
-  return nb_of_entry;
+const array_t* dictionary_get_entry(const dictionary_t* dic, int code) {
+  return dic->content[code];
+}
+
+void dictionary_free(dictionary_t* dic) {
+  size_t i;
+  for (i = 0 ; i < dic->len ; ++i) {
+    array_free(dic->content[i]);
+  }
+  free(dic);
 }
