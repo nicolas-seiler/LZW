@@ -17,7 +17,7 @@ void lzw_code(const char* src_path, const char* dest_path) {
   // Ouverture du fichier source
   FILE* src_file = fopen(src_path, "r");
 
-  // Initialisation des varaibles temporaires
+  // Initialisation des variables temporaires
   int cursor;
   array_t* encoded_file = array_new(),
          * out = array_new(),
@@ -58,26 +58,24 @@ void lzw_decode(const char* src_path, const char* dest_path) {
   FILE* src_file = fopen(src_path, "r");
 
   // Initialisation des variables temporaires
-  array_t* encoded_file = array_new();
   int cursor;
+  array_t* out = array_new(),
+         * buf = array_new(),
+         * encoded_file = array_new(),
+         * decoded_file = array_new();
+  dictionary_t* dic = dictionary_new();
 
   // Récupération du fichier
   while ((cursor = fgetc(src_file)) != EOF) {
     encoded_file = array_add(encoded_file, cursor);
   }
   encoded_file = array_bytes_to_ints(encoded_file);
-
-  // Initialisation des variables temporaires
   const int* src = array_content(encoded_file);
-  array_t* out = array_new(),
-         * buf = array_new(),
-         * decoded_file = array_new();
-  dictionary_t* dic = dictionary_new();
 
   // Décodage
   decoded_file = array_concat(decoded_file, dictionary_get_entry(dic, src[0]));
   buf = array_add(buf, src[0]);
-  
+
   size_t i;
   for (i = 1 ; i < array_len(encoded_file) ; ++i) {
     cursor = src[i];
