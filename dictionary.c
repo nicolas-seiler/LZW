@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DICTIONARY_MAX_LEN 4096
+
+struct dictionary_s {
+  array_t* content[DICTIONARY_MAX_LEN];
+  size_t len;
+};
+
 dictionary_t* dictionary_new() {
   dictionary_t* dic = (dictionary_t*)malloc(sizeof(dictionary_t));
   dic->len = 0;
@@ -16,13 +23,19 @@ dictionary_t* dictionary_new() {
 }
 
 dictionary_t* dictionary_add(dictionary_t* dic, const array_t* e) {
-  dic->content[dic->len] = array_new_from(e);
-  ++(dic->len);
+  if (dic->len < DICTIONARY_MAX_LEN) {
+    dic->content[dic->len] = array_new_from(e);
+    ++(dic->len);
+  }
   return dic;
 }
 
-bool dictionary_is_in(const dictionary_t* dic, const array_t* e) {
+bool dictionary_is_entry_in(const dictionary_t* dic, const array_t* e) {
   return dictionary_get_code(dic, e) != -1;
+}
+
+bool dictionary_is_code_in(const dictionary_t* dic, int code) {
+  return code < (int)dic->len;
 }
 
 int dictionary_get_code(const dictionary_t* dic, const array_t* e) {

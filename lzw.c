@@ -7,8 +7,8 @@
 static void _write_array(const char* dest_path, const array_t* a) {
   FILE* dest_file = fopen(dest_path, "w+");
   size_t i;
-  for (i = 0 ; i < a->len ; ++i) {
-    fwrite((a->content)+i, sizeof(char), 1, dest_file);
+  for (i = 0 ; i < array_len(a) ; ++i) {
+    fwrite(array_content(a)+i, sizeof(char), 1, dest_file);
   }
   fclose(dest_file);
 }
@@ -18,23 +18,24 @@ void lzw_code(const char* src_path, const char* dest_path) {
   FILE* src_file = fopen(src_path, "r");
 
   // Initialisation des varaibles temporaires
+  int cursor;
   array_t* encoded_file = array_new(),
-         * w = array_new(),
-         * p = array_new();
+         * out = array_new(),
+         * buf = array_new();
   dictionary_t* dic = dictionary_new();
-  int c;
 
   // Encodage
-  while ((c = fgetc(src_file)) != EOF) {
-    p = array_add(p, c);
-    if (dictionary_is_in(dic, p)) {
-      w = array_add(w, c);
-    }
-    else {
-      dic = dictionary_add(dic, p);
-      encoded_file = array_add(encoded_file, dictionary_get_code(dic, w));
-      w = array_clear(w);
-      p = array_clear(p);
+  while ((cursor = fgetc(src_file)) != EOF) {
+    buf = array_add(buf, cursor);
+    if (dictionary_is_entry_in(dic, buf)) {
+      out = array_add(out, cursor);
+    } else {
+      dic = dictionary_add(dic, buf);
+      encoded_file = array_add(encoded_file, dictionary_get_code(dic, out));
+      out = array_clear(out);
+      buf = array_clear(buf);
+      out = array_add(out, cursor);
+      buf = array_add(buf, cursor);
     }
   }
 
@@ -47,8 +48,8 @@ void lzw_code(const char* src_path, const char* dest_path) {
 
   // Libération des variables temporaires
   array_free(encoded_file);
-  array_free(w);
-  array_free(p);
+  array_free(out);
+  array_free(buf);
   dictionary_free(dic);
 }
 
@@ -56,14 +57,50 @@ void lzw_decode(const char* src_path, const char* dest_path) {
   // Ouverture du fichier source
   FILE* src_file = fopen(src_path, "r");
 
-  // Initialisation des varaibles temporaires
-  array_t* encoded_file = array_new(),
-         * w = array_new(),
-         * p = array_new();
-  dictionary_t* dic = dictionary_new();
-  int c;
+  // Initialisation des variables temporaires
+  array_t* encoded_file = array_new();
+  int cursor;
 
-  // Encodage
-  while ((c = fgetc(src_file)) != EOF) {
+  // Récupération du fichier
+  while ((cursor = fgetc(src_file)) != EOF) {
+    encoded_file = array_add(encoded_file, cursor);
   }
+  encoded_file = array_bytes_to_ints(encoded_file);
+
+  // Initialisation des variables temporaires
+  const int* src = array_content(encoded_file);
+  array_t* out = array_new(),
+         * buf = array_new(),
+         * decoded_file = array_new();
+  dictionary_t* dic = dictionary_new();
+
+  // Décodage
+  decoded_file = array_concat(decoded_file, dictionary_get_entry(dic, src[0]));
+  buf = array_add(buf, src[0]);
+  
+  size_t i;
+  for (i = 1 ; i < array_len(encoded_file) ; ++i) {
+    cursor = src[i];
+    if (dictionary_is_code_in(dic, cursor)) {
+      out = array_copy(out, dictionary_get_entry(dic, cursor));
+    } else {
+      out = array_copy(out, buf);
+      out = array_add(out, array_content(buf)[0]);
+    }
+    decoded_file = array_concat(decoded_file, out);
+    buf = array_add(buf, array_content(out)[0]);
+    dictionary_add(dic, buf);
+    buf = array_copy(buf, out);
+  }
+  _write_array(dest_path, decoded_file);
+
+  // Fermeture du fichier source
+  fclose(src_file);
+
+  // Libération des variables temporaires
+  array_free(encoded_file);
+  array_free(decoded_file);
+  array_free(out);
+  array_free(buf);
+  dictionary_free(dic);
 }

@@ -5,6 +5,11 @@
 #define BASE_CAPACITY 1
 #define GROWING_FACTOR 2
 
+struct array_s {
+  int* content;
+  size_t len, capacity;
+};
+
 array_t* array_new() {
   array_t* a = (array_t*)malloc(sizeof(array_t));
   a->content = (int*)malloc(BASE_CAPACITY*sizeof(int));
@@ -39,7 +44,7 @@ array_t* array_ints_to_bytes(array_t* a) {
   for (i = 0 ; i < (a->len - 1) ; i += 2) {
     tmp = array_add(tmp, src[i] >> 4);
     tmp = array_add(tmp, ((src[i] << 4) | ((src[i+1] & 0xF00) >> 8)) & 0xFF);
-    tmp = array_add(tmp, src[i] & 0xFF);
+    tmp = array_add(tmp, src[i+1] & 0xFF);
   }
   if (a->len % 2 != 0) {
     tmp = array_add(tmp, 10);
@@ -54,7 +59,7 @@ array_t* array_bytes_to_ints(array_t* a) {
   size_t i;
   for (i = 0 ; i < (a->len - 2) ; i += 3) {
     tmp = array_add(tmp, (src[i] << 4) | (src[i+1] >> 4));
-    tmp = array_add(tmp, ((src[i+1] & 0x0F) << 8) & src[i+2]);
+    tmp = array_add(tmp, ((src[i+1] & 0x0F) << 8) | src[i+2]);
   }
   array_free(a);
   return tmp;
@@ -63,6 +68,28 @@ array_t* array_bytes_to_ints(array_t* a) {
 array_t* array_clear(array_t* a) {
   array_free(a);
   return array_new();
+}
+
+array_t* array_concat(array_t* dest, const array_t* src) {
+  size_t i;
+  for (i = 0 ; i < src->len ; ++i) {
+    dest = array_add(dest, src->content[i]);
+  }
+  return dest;
+}
+
+array_t* array_copy(array_t* dest, const array_t* src) {
+  array_free(dest);
+  dest = array_new_from(src);
+  return dest;
+}
+
+size_t array_len(const array_t* a) {
+  return a->len;
+}
+
+const int* array_content(const array_t* a) {
+  return a->content;
 }
 
 bool array_is_equal(const array_t* a0, const array_t* a1) {
