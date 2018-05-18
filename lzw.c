@@ -4,6 +4,19 @@
 #include "array.h"
 #include "dictionary.h"
 
+#define ENCRYPTION_KEY 0x1E
+
+static array_t* _xor_encryption(array_t* a) {
+  size_t i;
+  const int* src = array_content(a);
+  array_t* tmp = array_new();
+  for ( i = 0 ; i < array_len(a) ; ++i) {
+    tmp = array_add(tmp, (src[i] ^ ENCRYPTION_KEY) & 0xFF);
+  }
+  array_free(a);
+  return tmp;
+}
+
 static void _write_array(const char* dest_path, const array_t* a) {
   FILE* dest_file = fopen(dest_path, "w+");
   size_t i;
@@ -47,6 +60,7 @@ void lzw_code(const char* src_path, const char* dest_path) {
 
   // Copie de l'encodage vers le fichier destination
   encoded_file = array_ints_to_bytes(encoded_file);
+  encoded_file = _xor_encryption(encoded_file);
   _write_array(dest_path, encoded_file);
 
   // Fermeture du fichier source
@@ -79,6 +93,7 @@ void lzw_decode(const char* src_path, const char* dest_path) {
   while ((cursor = fgetc(src_file)) != EOF) {
     encoded_file = array_add(encoded_file, cursor);
   }
+  encoded_file = _xor_encryption(encoded_file);
   encoded_file = array_bytes_to_ints(encoded_file);
   const int* src = array_content(encoded_file);
 
@@ -97,7 +112,7 @@ void lzw_decode(const char* src_path, const char* dest_path) {
     }
     decoded_file = array_concat(decoded_file, out);
     buf = array_add(buf, array_content(out)[0]);
-    dictionary_add(dic, buf);
+    dic = dictionary_add(dic, buf);
     buf = array_copy(buf, out);
   }
   _write_array(dest_path, decoded_file);
