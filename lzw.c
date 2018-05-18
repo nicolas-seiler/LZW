@@ -16,6 +16,10 @@ static void _write_array(const char* dest_path, const array_t* a) {
 void lzw_code(const char* src_path, const char* dest_path) {
   // Ouverture du fichier source
   FILE* src_file = fopen(src_path, "r");
+  if (!src_file) {
+    printf("Impossible d'ouvrir le fichier source\n");
+    return;
+  }
 
   // Initialisation des variables temporaires
   int cursor;
@@ -28,15 +32,17 @@ void lzw_code(const char* src_path, const char* dest_path) {
   while ((cursor = fgetc(src_file)) != EOF) {
     buf = array_add(buf, cursor);
     if (dictionary_is_entry_in(dic, buf)) {
-      out = array_add(out, cursor);
+      out = array_copy(out, buf);
     } else {
       dic = dictionary_add(dic, buf);
       encoded_file = array_add(encoded_file, dictionary_get_code(dic, out));
       out = array_clear(out);
-      buf = array_clear(buf);
       out = array_add(out, cursor);
-      buf = array_add(buf, cursor);
+      buf = array_copy(buf, out);
     }
+  }
+  if (dictionary_is_entry_in(dic, out)) {
+    encoded_file = array_add(encoded_file, dictionary_get_code(dic, out));
   }
 
   // Copie de l'encodage vers le fichier destination
@@ -56,6 +62,10 @@ void lzw_code(const char* src_path, const char* dest_path) {
 void lzw_decode(const char* src_path, const char* dest_path) {
   // Ouverture du fichier source
   FILE* src_file = fopen(src_path, "r");
+  if (!src_file) {
+    printf("Impossible d'ouvrir le fichier source\n");
+    return;
+  }
 
   // Initialisation des variables temporaires
   int cursor;

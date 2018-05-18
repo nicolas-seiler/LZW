@@ -1,0 +1,6 @@
+L'utilisation se fait en ligne de commande et à l'aide de 3 arguments.
+arg1 -> "-c" pour le codage et "-d" pour le décodage. Le programme n'encode pas les fichiers vides.
+arg2 -> le fichier source
+arg3 -> le fichier destination
+
+exemple: ./lzw -c src dest

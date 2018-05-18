@@ -47,7 +47,9 @@ array_t* array_ints_to_bytes(array_t* a) {
     tmp = array_add(tmp, src[i+1] & 0xFF);
   }
   if (a->len % 2 != 0) {
-    tmp = array_add(tmp, 10);
+    i = a->len - 1;
+    tmp = array_add(tmp, src[i] >> 4);
+    tmp = array_add(tmp, (src[i] << 4) & 0xFF);
   }
   array_free(a);
   return tmp;
@@ -60,6 +62,10 @@ array_t* array_bytes_to_ints(array_t* a) {
   for (i = 0 ; i < (a->len - 2) ; i += 3) {
     tmp = array_add(tmp, (src[i] << 4) | (src[i+1] >> 4));
     tmp = array_add(tmp, ((src[i+1] & 0x0F) << 8) | src[i+2]);
+  }
+  if (a->len % 3 != 0) {
+    i = a->len - 2;
+    tmp = array_add(tmp, (src[i] << 4) | (src[i+1] >> 4));
   }
   array_free(a);
   return tmp;
